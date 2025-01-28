@@ -1,23 +1,36 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { CreatePlayerDto } from './dtos/create-player.dto';
 import { PlayerService } from './player.service';
+import { PlayerParametersValidationPipe } from './pipes/player-parameters-validation.pipe';
+import { UpdatePlayerDto } from './dtos/update-player.dto';
 
 @Controller('api/v1/player')
 export class PlayerController {
   constructor(private readonly playerService: PlayerService) {}
-  @Post()
+
+  @Put('/:_id')
+  @UsePipes(ValidationPipe)
   async updatePlayer(
-    @Query('email') email: string,
-    @Body() createPlayerDto: CreatePlayerDto,
+    @Param('_id', PlayerParametersValidationPipe) _id: string,
+    @Body() updatePlayerDto: UpdatePlayerDto,
   ) {
-    await this.playerService.update(email, createPlayerDto);
+    await this.playerService.update(_id, updatePlayerDto);
   }
 
   @Post('create')
+  @UsePipes(ValidationPipe)
   async createPlayer(@Body() createPlayerDto: CreatePlayerDto) {
-    const { email } = createPlayerDto;
-    await this.playerService.createPlayer(createPlayerDto);
-    return JSON.stringify({ email });
+    return this.playerService.createPlayer(createPlayerDto);
   }
 
   @Get()
@@ -26,15 +39,15 @@ export class PlayerController {
     return JSON.stringify(players);
   }
 
-  @Get('get-by-email')
-  async getbyEmail(@Query('email') email: string) {
-    const player = await this.playerService.getPlayerByEmail(email);
+  @Get('/:_id')
+  async getById(@Param('_id', PlayerParametersValidationPipe) _id: string) {
+    const player = await this.playerService.getPlayerById(_id);
     return JSON.stringify(player);
   }
 
-  @Delete()
-  async delete(@Query('email') email: string) {
-    const player = await this.playerService.deletePlayerByEmail(email);
+  @Delete('/:_id')
+  async delete(@Param('_id', PlayerParametersValidationPipe) _id: string) {
+    const player = await this.playerService.deletePlayerById(_id);
     return JSON.stringify(player);
   }
 }

@@ -1,8 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
 import { CreatePlayerDto } from './dtos/create-player.dto';
 import { Player } from './interfaces/player.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { UpdatePlayerDto } from './dtos/update-player.dto';
 
 @Injectable()
 export class PlayerService {
@@ -12,34 +17,45 @@ export class PlayerService {
   ) {}
 
   async createPlayer(createPlayerDto: CreatePlayerDto) {
-    await this.save(createPlayerDto);
+    const { email } = createPlayerDto;
+
+    const playerAlreadyRegistered = await this.playerModel.findOne({ email });
+
+    if (playerAlreadyRegistered) {
+      throw new BadGatewayException('Email already registered');
+    }
+
+    const player = new this.playerModel(createPlayerDto);
+    return player.save();
   }
 
   async list(): Promise<Player[]> {
     return this.playerModel.find({});
   }
 
-  async getPlayerByEmail(email: string): Promise<Player> {
-    const player = await this.playerModel.findOne({ email });
-    if (!player)
+  async getPlayerById(_id: string): Promise<Player> {
+    const player = await this.playerModel.findOne({ _id });
+    if (!player) {
       throw new BadRequestException(
-        `Email ${email} does not correspond to a player.`,
+        `Id ${_id} does not correspond to a player.`,
       );
+    }
     return player;
   }
 
-  async update(email: string, createPlayerDto: CreatePlayerDto) {
+  async update(_id: string, updatePlayerDto: UpdatePlayerDto) {
+    const playerAlreadyRegistered = await this.playerModel.findOne({ _id });
+
+    if (!playerAlreadyRegistered) {
+      throw new BadGatewayException(`Player with id ${_id} not found`);
+    }
+
     return this.playerModel
-      .findOneAndUpdate({ email }, { $set: createPlayerDto })
+      .findOneAndUpdate({ _id }, { $set: updatePlayerDto })
       .exec();
   }
 
-  async deletePlayerByEmail(email: string) {
-    await this.playerModel.deleteOne({ email }).exec();
-  }
-
-  private async save(createPlayerDto: CreatePlayerDto): Promise<void> {
-    const player = new this.playerModel(createPlayerDto);
-    await player.save();
+  async deletePlayerById(_id: string) {
+    await this.playerModel.deleteOne({ _id }).exec();
   }
 }
