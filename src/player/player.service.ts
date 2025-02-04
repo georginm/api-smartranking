@@ -16,7 +16,7 @@ export class PlayerService {
     private readonly playerModel: Model<Player>,
   ) {}
 
-  async createPlayer(createPlayerDto: CreatePlayerDto) {
+  async createPlayer(createPlayerDto: CreatePlayerDto): Promise<Player> {
     const { email } = createPlayerDto;
 
     const playerAlreadyRegistered = await this.playerModel.findOne({ email });
@@ -43,19 +43,17 @@ export class PlayerService {
     return player;
   }
 
-  async update(_id: string, updatePlayerDto: UpdatePlayerDto) {
+  async update(_id: string, updatePlayerDto: UpdatePlayerDto): Promise<void> {
     const playerAlreadyRegistered = await this.playerModel.findOne({ _id });
 
     if (!playerAlreadyRegistered) {
       throw new BadGatewayException(`Player with id ${_id} not found`);
     }
 
-    return this.playerModel
-      .findOneAndUpdate({ _id }, { $set: updatePlayerDto })
-      .exec();
+    this.playerModel.findOneAndUpdate({ _id }, { $set: updatePlayerDto });
   }
 
-  async deletePlayerById(_id: string) {
+  async deletePlayerById(_id: string): Promise<void> {
     await this.playerModel.deleteOne({ _id }).exec();
   }
 }
