@@ -50,10 +50,16 @@ export class PlayerService {
       throw new BadGatewayException(`Player with id ${_id} not found`);
     }
 
-    this.playerModel.findOneAndUpdate({ _id }, { $set: updatePlayerDto });
+    await this.playerModel.updateOne({ _id }, { $set: updatePlayerDto });
   }
 
   async deletePlayerById(_id: string): Promise<void> {
+    const playerAlreadyRegistered = await this.playerModel.findOne({ _id });
+
+    if (!playerAlreadyRegistered) {
+      throw new BadGatewayException(`Player with id ${_id} not found`);
+    }
+
     await this.playerModel.deleteOne({ _id }).exec();
   }
 }
